@@ -70,13 +70,18 @@ surfaceScalarField rhoPhi
     fvc::interpolate(rho)*phi
 );
 
+typedef incompressibleInterPhaseTransportModel
+    <
+        immiscibleIncompressibleTwoPhaseMixture
+    > transportModelType;
 
-// Construct incompressible turbulence model
-autoPtr<incompressible::turbulenceModel> turbulence
+autoPtr<transportModelType> turbulence
 (
-    incompressible::turbulenceModel::New(U, phi, mixture)
+    new transportModelType
+    (
+        rho, U, phi, rhoPhi, mixture
+    )
 );
-
 
 #include "readGravitationalAcceleration.H"
 #include "readhRef.H"
@@ -148,25 +153,8 @@ volSymmTensorField strainRateTensor
         IOobject::NO_READ,
         IOobject::NO_WRITE
     ),
-//	mesh,
-//	dimensionedTensor(U.dimensions()/dimLength, Zero)
     symm(fvc::grad(U))
 );
-
-/*volTensorField strainRateTensor
-(
-    IOobject
-    (
-        "strainRateTensor",
-        runTime.timeName(),
-        mesh,
-        IOobject::NO_READ,
-        IOobject::AUTO_WRITE
-    ),
-//	mesh,
-//	dimensionedTensor(U.dimensions()/dimLength, Zero)
-    0.5 * (fvc::grad(U) - T(fvc::grad(U)))
-);*/
 
 volTensorField rotationRateTensor
 (
@@ -178,8 +166,6 @@ volTensorField rotationRateTensor
         IOobject::NO_READ,
         IOobject::NO_WRITE
     ),
-//	mesh,
-//	dimensionedTensor(U.dimensions()/dimLength, Zero)
     skew(fvc::grad(U))
 );
 
