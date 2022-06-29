@@ -147,7 +147,7 @@ volTensorField gradU
 (
     IOobject
     (
-        "strainRateTensor",
+        "gradU",
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
@@ -161,7 +161,7 @@ volScalarField inv1GradU
 (
     IOobject
     (
-        "strainRateTensor",
+        "inv1GradU",
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
@@ -175,7 +175,7 @@ volScalarField inv2GradU
 (
     IOobject
     (
-        "strainRateTensor",
+        "inv2GradU",
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
@@ -433,7 +433,7 @@ volScalarField magGradP
 (
     IOobject
     (
-        "gradP",
+        "magGradP",
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
@@ -459,7 +459,7 @@ volScalarField magGradAW
 (
     IOobject
     (
-        "gradP",
+        "magGradAW",
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
