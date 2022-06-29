@@ -173,8 +173,11 @@ int main(int argc, char *argv[])
         }
 
 		// Calc T0, ..., T9
-		strainRateTensor = symm(fvc::grad(U));
-		rotationRateTensor = skew(fvc::grad(U));
+		gradU = fvc::grad(U);
+		inv1GradU = tr(gradU);
+		inv2GradU = tr(gradU) * tr(gradU) - tr(gradU & gradU);
+		strainRateTensor = symm(gradU);
+		rotationRateTensor = skew(gradU);
     	T0 = tensor::I & strainRateTensor;
     	T1 = (strainRateTensor & rotationRateTensor) - (rotationRateTensor & strainRateTensor);
     	T2 = (strainRateTensor & strainRateTensor) - (tensor::one * (tr(strainRateTensor & strainRateTensor) / 3));
@@ -199,6 +202,10 @@ int main(int argc, char *argv[])
     	I2 = tr(strainRateTensor & strainRateTensor & strainRateTensor);
     	I3 = tr(rotationRateTensor & rotationRateTensor & strainRateTensor);
     	I4 = tr(rotationRateTensor & rotationRateTensor & strainRateTensor & strainRateTensor);
+		gradP = fvc::grad(p_rgh);
+		magGradP = mag(gradP);
+		gradAW = fvc::grad(alpha1);
+		magGradAW = mag(gradAW);
 
         runTime.write();
 

@@ -143,6 +143,48 @@ surfaceScalarField alphaPhiUn
 
 // Linearly independent tensors T0, ..., T9 made from
 // different combinations of strain rate and rotation rate tensors.
+volTensorField gradU
+(
+    IOobject
+    (
+        "strainRateTensor",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        //IOobject::NO_WRITE
+        IOobject::AUTO_WRITE
+    ),
+    fvc::grad(U)
+);
+
+volScalarField inv1GradU
+(
+    IOobject
+    (
+        "strainRateTensor",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        //IOobject::NO_WRITE
+        IOobject::AUTO_WRITE
+    ),
+    tr(gradU)
+);
+
+volScalarField inv2GradU
+(
+    IOobject
+    (
+        "strainRateTensor",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        //IOobject::NO_WRITE
+        IOobject::AUTO_WRITE
+    ),
+    tr(gradU) * tr(gradU) - tr(gradU & gradU)
+);
+
 volSymmTensorField strainRateTensor
 (
     IOobject
@@ -151,9 +193,10 @@ volSymmTensorField strainRateTensor
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
-        IOobject::NO_WRITE
+        //IOobject::NO_WRITE
+        IOobject::AUTO_WRITE
     ),
-    symm(fvc::grad(U))
+    symm(gradU)
 );
 
 volTensorField rotationRateTensor
@@ -164,9 +207,10 @@ volTensorField rotationRateTensor
         runTime.timeName(),
         mesh,
         IOobject::NO_READ,
-        IOobject::NO_WRITE
+//        IOobject::NO_WRITE
+        IOobject::AUTO_WRITE
     ),
-    skew(fvc::grad(U))
+    skew(gradU)
 );
 
 volTensorField T0
@@ -370,6 +414,58 @@ volScalarField I4
         IOobject::AUTO_WRITE
     ),
     tr(rotationRateTensor & rotationRateTensor & strainRateTensor & strainRateTensor)
+);
+
+volVectorField gradP
+(
+    IOobject
+    (
+        "gradP",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    fvc::grad(p_rgh)
+);
+
+volScalarField magGradP
+(
+    IOobject
+    (
+        "gradP",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mag(gradP)
+);
+
+volVectorField gradAW
+(
+    IOobject
+    (
+        "gradAW",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    fvc::grad(alpha1)
+);
+
+volScalarField magGradAW
+(
+    IOobject
+    (
+        "gradP",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mag(gradAW)
 );
 
 #include "createMRF.H"
