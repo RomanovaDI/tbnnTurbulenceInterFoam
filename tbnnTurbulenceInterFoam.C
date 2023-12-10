@@ -37,7 +37,6 @@ Description
     re-meshing.
 
 \*---------------------------------------------------------------------------*/
-
 #include "fvCFD.H"
 #include "dynamicFvMesh.H"
 #include "CMULES.H"
@@ -52,7 +51,9 @@ Description
 #include "fvOptions.H"
 #include "CorrectPhi.H"
 #include "fvcSmooth.H"
-
+#include "tensorflow/c/c_api.h"
+#include "addTBNN.h"
+#include "NNInfoParser.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -64,6 +65,7 @@ int main(int argc, char *argv[])
         "With optional mesh motion and mesh topology changes including"
         " adaptive re-meshing."
     );
+
 
     #include "postProcess.H"
 
@@ -77,6 +79,7 @@ int main(int argc, char *argv[])
     #include "createAlphaFluxes.H"
     #include "initCorrectPhi.H"
     #include "createUfIfPresent.H"
+    #include "initTBNN.H"
 
     if (!LTS)
     {
@@ -86,7 +89,6 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     Info<< "\nStarting time loop\n" << endl;
-
     while (runTime.run())
     {
         #include "readDyMControls.H"
@@ -207,10 +209,30 @@ int main(int argc, char *argv[])
 		gradAW = fvc::grad(alpha1);
 		magGradAW = mag(gradAW);
 
-        runTime.write();
 
+        #include "prepareData.H"
+        std::vector<double> tbnn_output(output_info.size());
+
+        for (size_t i = 0; i < U.size(); ++i)
+        {
+            tbnn.Run(
+                inputs_0_values_t[i].data(), inputs_1_values_t[i].data(), tbnn_output,
+                inputs_0_values_t[i].size(), inputs_1_values_t[i].size(),
+                tbnn_inputs_names[0], tbnn_inputs_names[1]
+            );
+        U_corr.data()[i] = {tbnn_output[0], tbnn_output[1], tbnn_output[2]};
+        alpha1_corr.data()[i] = tbnn_output[3];
+        p_rgh_corr.data()[i] = tbnn_output[4];
+        }
+
+        U = U + U_corr;
+        alpha1 = alpha1 + alpha1_corr;
+        p_rgh = p_rgh + p_rgh_corr;
+
+        runTime.write();
         runTime.printExecutionTime(Info);
-    }
+
+        }
 
     Info<< "End\n" << endl;
 
