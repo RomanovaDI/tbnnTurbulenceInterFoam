@@ -468,5 +468,45 @@ volScalarField magGradAW
     mag(gradAW)
 );
 
+volVectorField U_corr
+(
+    IOobject
+    (
+        "U_corr",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    U - U
+);
+
+volScalarField p_rgh_corr
+(
+    IOobject
+    (
+        "p_rgh_corr",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    p_rgh - p_rgh
+);
+
+volScalarField alpha1_corr
+(
+    IOobject
+    (
+        "alpha1_corr",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    alpha1 - alpha1
+);
+
+
 #include "createMRF.H"
 #include "createFvOptions.H"
