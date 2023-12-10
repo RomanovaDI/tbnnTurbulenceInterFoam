@@ -1,3 +1,4 @@
 tbnnTurbulenceInterFoam.C
+addTBNN.cpp
 
 EXE = $(FOAM_USER_APPBIN)/tbnnTurbulenceInterFoam
