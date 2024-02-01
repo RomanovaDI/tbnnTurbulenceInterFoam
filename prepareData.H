@@ -1,35 +1,47 @@
-int U_size = U.size();
-std::vector<std::vector<double>> inputs_0_values(inputs_0_info.size(), std::vector<double> (U_size, 0));
-std::vector<std::vector<double>> inputs_1_values(inputs_1_info.size(), std::vector<double> (U_size, 0));
-
-//include this part of code as .H file
-//add check if idx lies between 0 and 8
-auto FillValues = [&](std::vector<std::vector<double>> &values, std::vector<InputFieldInfo> &info) {
-    for (int i = 0; i < values.size(); ++i) {
-            scalar* data= nullptr;
-            std::string name = info[i].name;
-            int idx = info[i].idx;
-            bool old_time = info[i].old_time;
+auto FillFieldValues = [&](FieldWithInfo &field, size_t field_size) {
+            void* data = nullptr;
+            std::string name = field.info.name;
+            int idx = field.info.idx;
+            bool prev_time_step = field.info.prev_time_step;
             assert(idx >= 0);
             assert(idx <= 9);
 
             if (name == "p_rgh") {
-                    data = old_time ? p_rgh.oldTime().data() : p_rgh.data();
+                    data = prev_time_step ? 
+                           p_rgh.oldTime().data() : 
+                           p_rgh.data();
+
+                    // if (prev_time_step)
+                    // {
+                    //     Info << "p_rgh oldtime: " << p_rgh.oldTime().data()[0] << endl;
+                    // }
+                    // else
+                    // {
+                    //     Info << "p_rgh: " << p_rgh.data()[0] << endl;
+                    // }
                 }
             else if (name == "U") {
-                    data = old_time ? U.oldTime()[idx].data() : U[idx].data();
+                    data = prev_time_step ? 
+                           U.oldTime().component(idx).get()->data() :
+                           U.component(idx).get()->data();
                 }
             else if (name == "alpha1") {
-                    data = old_time ? alpha1.oldTime().data() : alpha1.data();
+                    data = prev_time_step ? alpha1.oldTime().data() : alpha1.data();
                 }
             else if (name == "gradP") {
-                    data = old_time ? gradP.oldTime()[idx].data() : gradP[idx].data();
+                    data = prev_time_step ?
+                           gradP.oldTime().component(idx).get()->data() : 
+                           gradP.component(idx).get()->data();
                 }
             else if (name == "gradU") {
-                    data = old_time ? gradU.oldTime()[idx].data() : gradU[idx].data();
+                    data = prev_time_step ? 
+                           gradU.oldTime().component(idx).get()->data() : 
+                           gradU.component(idx).get()->data();
                 }
             else if (name == "gradAW") {
-                    data = old_time ? gradAW.oldTime()[idx].data() : gradAW[idx].data();
+                    data = prev_time_step ? 
+                           gradAW.oldTime().component(idx).get()->data() : 
+                           gradAW.component(idx).get()->data();
                 }
             else if (name == "inv1GradU") {
                     data = inv1GradU.data();
@@ -38,40 +50,10 @@ auto FillValues = [&](std::vector<std::vector<double>> &values, std::vector<Inpu
                     data = inv2GradU.data();
                 }
             else if (name == "strainRateTensor") {
-                    data = strainRateTensor[idx].data();
+                    data = strainRateTensor.component(idx).get()->data();
                 }
             else if (name == "rotationRateTensor") {
-                    data = rotationRateTensor[idx].data();
-                }
-            else if (name == "T0") {
-                    data = T0[idx].data();
-                }
-            else if (name == "T1") {
-                    data = T1[idx].data();
-                }
-            else if (name == "T2") {
-                    data = T2[idx].data();
-                }
-            else if (name == "T3") {
-                    data = T3[idx].data();
-                }
-            else if (name == "T4") {
-                    data = T4[idx].data();
-                }
-            else if (name == "T5") {
-                    data = T5[idx].data();
-                }
-            else if (name == "T6") {
-                    data = T6[idx].data();
-                }
-            else if (name == "T7") {
-                    data = T7[idx].data();
-                }
-            else if (name == "T8") {
-                    data = T8[idx].data();
-                }
-            else if (name == "T9") {
-                    data = T9[idx].data();
+                    data = rotationRateTensor.component(idx).get()->data();
                 }
             else if (name == "I0") {
                     data = I0.data();
@@ -94,33 +76,102 @@ auto FillValues = [&](std::vector<std::vector<double>> &values, std::vector<Inpu
             else if (name == "magGradAW") {
                     data = magGradAW.data();
                 }
-            else {
-                    assert(data);
+
+            //my little crutch
+
+            if (data != nullptr)
+            {
+                memcpy(field.field.data(), data, sizeof(double) * field_size);
+                return;
+            }
+
+            if (name == "T0") {
+                    memcpy(field.field.data(), T0.component(idx).get()->data(),
+                           sizeof(double) * field_size);
                 }
-            memcpy(&(values[i][0]), data, sizeof(double) * U_size);
-        }
+            else if (name == "T1") {
+                    memcpy(field.field.data(), T1.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T2") {
+                    memcpy(field.field.data(), T2.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T3") {
+                    memcpy(field.field.data(), T3.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T4") {
+                    memcpy(field.field.data(), T4.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T5") {
+                    memcpy(field.field.data(), T5.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T6") {
+                    memcpy(field.field.data(), T6.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T7") {
+                    memcpy(field.field.data(), T7.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T8") {
+                    memcpy(field.field.data(), T8.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else if (name == "T9") {
+                    memcpy(field.field.data(), T9.component(idx).get()->data(),
+                           sizeof(double) * field_size);
+                }
+            else {
+                    throw std::runtime_error("Unknown field name");
+                }
 };
 
-FillValues(inputs_0_values, inputs_0_info);
-FillValues(inputs_1_values, inputs_1_info);
+int field_size = U.size();
 
-std::vector<std::vector<double>> inputs_0_values_t(U_size, std::vector<double> (inputs_0_info.size(), 0));
-std::vector<std::vector<double>> inputs_1_values_t(U_size, std::vector<double> (inputs_1_info.size(), 0));
+size_t max_branch_size = 0;
+for (size_t i = 0; i < nn_inputs.size(); ++i)
+{
+    if (nn_inputs[i].branch_size > max_branch_size)
+        max_branch_size = nn_inputs[i].branch_size;
+}
 
-auto Transpose = [&](std::vector<std::vector<double>> &v_transposed, const std::vector<std::vector<double>> &v) {
-    assert(v.size() > 0);
-    assert(v[0].size() > 0);
-    assert(v_transposed.size() == v[0].size());
-    assert(v_transposed[0].size() == v.size());
+std::vector<std::vector<InputFields>> input_data(
+    field_size, std::vector<InputFields> (nn_inputs.size(), InputFields(max_branch_size)));
+std::vector<std::string> inputs_names(nn_inputs.size(), "");
 
-    for (int i = 0; i < v_transposed.size(); ++i)
-        for (int j = 0; j < v_transposed[0].size(); ++j)
-            v_transposed[i][j] = v[j][i];
+for (size_t j = 0; j < input_data.size(); ++j)
+    for (size_t k = 0; k < input_data[j].size(); ++k)
+        input_data[j][k].fields.resize(nn_inputs[k].branch_size);
 
-};
+for (size_t i = 0; i < nn_inputs.size(); ++i)
+{
+    inputs_names[i] = nn_inputs[i].name;
 
-Transpose(inputs_0_values_t, inputs_0_values);
-Transpose(inputs_1_values_t, inputs_1_values);
+    for (size_t j = 0; j < nn_inputs[i].branch_size; ++j)
+    {
+        nn_inputs[i].fields[j].field.resize(field_size);
+        FillFieldValues(nn_inputs[i].fields[j], field_size);
+
+        for (size_t k = 0; k < nn_inputs[i].fields[j].field.size(); ++k)
+            input_data[k][i].fields[j] = nn_inputs[i].fields[j].field[k];
+
+    }
+}
+
+// Info << "input_data:" << endl;
+// for (size_t i = 0; i < input_data[0].size(); ++i)
+// {
+//     Info << "branch size: " << input_data[0][i].fields.size() << endl;
+//     for (size_t j = 0; j < input_data[0][i].fields.size(); ++j)
+//     {
+//         Info << input_data[0][i].fields[j] << endl;
+//     }   
+//     Info << endl; 
+// }
 
 
 

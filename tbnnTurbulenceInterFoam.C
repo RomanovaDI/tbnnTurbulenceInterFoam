@@ -51,8 +51,9 @@ Description
 #include "fvOptions.H"
 #include "CorrectPhi.H"
 #include "fvcSmooth.H"
+
 #include "tensorflow/c/c_api.h"
-#include "addTBNN.h"
+#include "addNN.h"
 #include "NNInfoParser.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -79,7 +80,8 @@ int main(int argc, char *argv[])
     #include "createAlphaFluxes.H"
     #include "initCorrectPhi.H"
     #include "createUfIfPresent.H"
-    #include "initTBNN.H"
+
+    #include "initNN.H"
 
     if (!LTS)
     {
@@ -209,25 +211,45 @@ int main(int argc, char *argv[])
 		gradAW = fvc::grad(alpha1);
 		magGradAW = mag(gradAW);
 
-
-        #include "prepareData.H"
-        std::vector<double> tbnn_output(output_info.size());
-
-        for (size_t i = 0; i < U.size(); ++i)
+        if (correct_fields_with_nn) 
         {
-            tbnn.Run(
-                inputs_0_values_t[i].data(), inputs_1_values_t[i].data(), tbnn_output,
-                inputs_0_values_t[i].size(), inputs_1_values_t[i].size(),
-                tbnn_inputs_names[0], tbnn_inputs_names[1]
-            );
-        U_corr.data()[i] = {tbnn_output[0], tbnn_output[1], tbnn_output[2]};
-        alpha1_corr.data()[i] = tbnn_output[3];
-        p_rgh_corr.data()[i] = tbnn_output[4];
+            try
+            {
+                Info << "Starting fields correction witn NN\n" << endl;
+                #include "prepareData.H"
+
+                std::vector<double> output_data(nn_output.branch_size);
+                for (size_t i = 0; i < U.size(); ++i)
+                {
+                    nn.Run(
+                        output_data, input_data[i], inputs_names
+                    );
+
+                    //TODO: correct processing of NN outputs from the config 
+
+                    //temporary solution
+                    U_corr.data()[i] = {output_data[0], output_data[1], output_data[2]};
+                    alpha1_corr.data()[i] = output_data[3];
+                    p_rgh_corr.data()[i] = output_data[4];
+                }
+
+                U = U + U_corr;
+                alpha1 = alpha1 + alpha1_corr;
+                p_rgh = p_rgh + p_rgh_corr;
+
+                Info << "End of fields correction witn NN\n" << endl;
+            }
+            catch (const std::exception &e)
+            {
+                Info << "Failed to correct fields with NN: "
+                << e.what() << endl;
+            }
+            catch (...)
+            {
+                Info << "Failed to correct fields with NN." << endl;
+            }
         }
 
-        U = U + U_corr;
-        alpha1 = alpha1 + alpha1_corr;
-        p_rgh = p_rgh + p_rgh_corr;
 
         runTime.write();
         runTime.printExecutionTime(Info);
